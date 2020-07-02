@@ -14,13 +14,19 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import communication.TrafficCommunicator;
+import pdfcreator.PdfWriter;
+
 public class TraffincEndpointGUI extends JFrame {
   private static final int NUMBER_OF_NUMS=7; 
+  private static final int COST_PER_COMBINATION=10;
 private JButton addNewCombination;
  private JButton next;
  private JTextArea combinations;
  private JTextField[] numbers;
  private LinkedList<Integer[]> combinationList;
+ private TrafficCommunicator communicator;
+ 
 	public TraffincEndpointGUI() {
 		setSize(500, 400);
 		combinationList= new LinkedList<Integer[]>();
@@ -74,6 +80,12 @@ private JButton addNewCombination;
 			}
 		});
 		next = new JButton("Next");
+		next.addActionListener(l->{
+			new PaymentDialog();
+		});
+		
+		
+		
 		JPanel south= new JPanel();
 		south.add(addNewCombination);
 		south.add(next);
@@ -101,25 +113,74 @@ private JButton addNewCombination;
 			
 			super(TraffincEndpointGUI.this, "Payment", true);
 			setSize(400,300);
+			setLayout(new GridLayout(2,1));
 			setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+			addCashPayment();
+			addPaymentViaAccount();
 			setVisible(true);
 			// TODO Auto-generated constructor stub
 		}
 		
-		private void addEast() {
+		private void addCashPayment() {
 			
-			JPanel east= new JPanel();
-			east.setLayout(new GridLayout(2, 1));
+			JPanel north= new JPanel();
+			north.setLayout(new GridLayout(2, 1));
 			cashAmount= new JTextField(10);
 			JButton pay1 = new JButton("Pay cash");
-			east.add(cashAmount);
-			east.add(pay1);
-			add(east,BorderLayout.EAST);
+			
+			
+			
+			pay1.addActionListener(l->{
+			 try {
+				 Integer amount  = Integer.parseInt(cashAmount.getText());
+				 if(amount<COST_PER_COMBINATION*combinationList.size()) {
+					 JDialog error =new JDialog(TraffincEndpointGUI.this, true);
+						
+						error.add(new JLabel("      Insufficient amount"));
+						error.setSize(300,100);
+						error.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+						error.setVisible(true);
+	 
+					 return;
+				 }
+				if(! communicator.payViaCash(combinationList)) {
+					 JDialog error =new JDialog(TraffincEndpointGUI.this, true);
+						
+						error.add(new JLabel("      Error while  communicating with server"));
+						error.setSize(300,100);
+						error.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+						error.setVisible(true);
+	 
+					
+				}
+		
+				 
+				 
+				
+			} catch (Exception e) {
+				JDialog error =new JDialog(TraffincEndpointGUI.this, true);
+				
+				error.add(new JLabel("      Incorrect number format"));
+				error.setSize(300,100);
+				error.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+				error.setVisible(true);
+
+				// TODO: handle exception
+			}
+			
+			});
+			
+			north.add(cashAmount);
+			north.add(pay1);
+			add(north);
+			
+			
+		
 					
 			
 			
 		}
-		private void addWest() {
+		private void addPaymentViaAccount() {
 			
 			JTextField id = new JTextField("ID", 10);
 			JTextField pin= new JPasswordField(10);
@@ -130,7 +191,7 @@ private JButton addNewCombination;
 			west.add(id);
 			west.add(pin);
 			west.add(pay2);
-			add(west,BorderLayout.WEST);
+			add(west);
 			
 		}
 		

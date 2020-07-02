@@ -1,6 +1,7 @@
 package database;
 
 import java.util.LinkedList;
+import java.util.List;
 
 public class AccountInfo {
 	private String accountId;
@@ -59,7 +60,7 @@ public class AccountInfo {
 		
 		if(this.amount<amount) return -1;
 		this.amount-=amount;
-		Integer newID=new Integer(0);
+		Integer newID=0;
 		if(!allTransactions.isEmpty())
 		 newID=allTransactions.getLast()+1;
 		
@@ -76,6 +77,10 @@ public class AccountInfo {
 		if(amount<0) return false;
 		this.amount+=amount;
 		return true;
+		
+	}
+	public  List<Integer> getAllTransactions(){
+		return allTransactions;
 		
 	}
 	synchronized public String toString() {
