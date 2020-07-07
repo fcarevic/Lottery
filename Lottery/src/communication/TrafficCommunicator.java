@@ -2,18 +2,28 @@ package communication;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.rmi.NotBoundException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.LinkedList;
 
+import constants.Constants;
+import mainserver.MainServerRemoteInterface;
 import pdfcreator.PdfWriter;
 
 public class TrafficCommunicator {
 	private static final int STATUS_OK=0;
 	
-	private Communicator subserverCommunicator, mainserverCommunicator;
+	private Communicator subserverCommunicator;
+	private MainServerRemoteInterface mainserverCommunicator;
+	private String hostSubserver;
 	
-	public TrafficCommunicator(String hostMainServer, int portMainServer,String hostSubserver, int portSubserver) throws UnknownHostException, IOException {
+	public TrafficCommunicator(String hostMainServer, int portMainServer,String hostSubserver, int portSubserver) throws UnknownHostException, IOException, NotBoundException {
 		subserverCommunicator= new Communicator(hostSubserver, portSubserver);
-		mainserverCommunicator= new Communicator(hostMainServer, portMainServer);
+		this.hostSubserver=hostSubserver;
+		
+		Registry register = LocateRegistry.getRegistry(hostMainServer,portMainServer);
+		mainserverCommunicator= (MainServerRemoteInterface) register.lookup(Constants.MAIN_SERVER_RMI_NAME);
 		// TODO Auto-generated constructor stub
 	}
 	
@@ -34,7 +44,14 @@ public class TrafficCommunicator {
 					subserverCommunicator.getInt();
 					
 					
-					mainserverCommunicator.sendInt(transactionID);
+					int ticketID=mainserverCommunicator.sendCombination(generateStringFromCombination(combinationList), transactionID, hostSubserver);
+					if(ticketID!=-1) {
+						PdfWriter.createPDF("Ticket"+ticketID+".pdf", combinationList, ticketID);
+						mainserverCommunicator.sendAck(ticketID);
+					}
+					
+					
+				/*	mainserverCommunicator.sendInt(transactionID);
 					if(STATUS_OK!=mainserverCommunicator.getInt()) { System.out.println("Status not ok"); return false;}
 					
 					sendCombinationToMainServer(combinationList);
@@ -43,7 +60,7 @@ public class TrafficCommunicator {
 					PdfWriter.createPDF("Ticket"+ticketID+".pdf", combinationList, ticketID);
 				    mainserverCommunicator.sendInt(STATUS_OK);
 					return true;
-
+*/
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -55,8 +72,24 @@ public class TrafficCommunicator {
 					return false;
 	}
 
-	
+	private String generateStringFromCombination(LinkedList<Integer[]> combinations ) {
+		StringBuilder sb = new StringBuilder();
+		for(Integer[] comb : combinations) {
+			for(int i=0; i< comb.length;i++) {
+				sb.append(comb[i]);
+				if(i!=comb.length-1)sb.append(',');
+				
+			}
+			sb.append('#');
+			sb.deleteCharAt(sb.lastIndexOf("#"));
+		}
+		return sb.toString();
+		
+		
+	}
+	/*
 	private boolean sendCombinationToMainServer(LinkedList<Integer[]> combinations ) throws IOException {
+
 		StringBuilder sb = new StringBuilder();
 		for(Integer[] comb : combinations) {
 			for(int i=0; i< comb.length;i++) {
@@ -86,7 +119,7 @@ public class TrafficCommunicator {
 		  
 		  return false;
 	}
-	
+	*/
 	
 
 }

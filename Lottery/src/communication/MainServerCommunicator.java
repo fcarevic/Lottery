@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.util.LinkedList;
 import java.util.List;
 
+import constants.Constants;
 import mainserver.MainServer;
 
 public class MainServerCommunicator {
@@ -20,10 +21,11 @@ public class MainServerCommunicator {
 		int transactionID=-1; 
 		try {
 			transactionID= clientCommunicator.getInt();
+			if(server.getCurrentlyActive()) {
 			server.addTransaction(transactionID);
-			clientCommunicator.sendInt(0);
+			clientCommunicator.sendInt(Constants.STATUS_OK);
 			clientCommunicator.getInt();
-			//TODO add transaction to list
+			} else clientCommunicator.sendInt(Constants.STATUS_ERROR);
 			return true;
 		} catch (IOException e) {
 			server.removeTransaction(transactionID);
@@ -34,7 +36,7 @@ public class MainServerCommunicator {
 	}
 	
 	
-	public boolean paymentViaAccountTraffic() {
+	/*public boolean paymentViaAccountTraffic() {
 		List<Integer[]> combinations=null;
 		int id=-1;
 		
@@ -86,6 +88,22 @@ public class MainServerCommunicator {
 	  return false;
 	}
 	
+	*/
+	
+	public boolean cashOutAccount(String account, int amount) throws IOException {
+		clientCommunicator.sendString(account);
+		clientCommunicator.sendInt(amount);
+		return true;
+		
+		
+	}
+	public boolean cashOutCah(int ticketID, int amount) throws IOException {
+		clientCommunicator.sendInt(ticketID);
+		clientCommunicator.sendInt(amount);
+		return true;
+		
+		
+	}
 	
 	
 	private List<Integer[]>  getCombinations(String combs) {

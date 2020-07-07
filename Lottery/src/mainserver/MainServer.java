@@ -2,24 +2,90 @@ package mainserver;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
+
+import constants.Constants;
 
 
 public class MainServer {
-			private Map<Integer, List<Integer[]>> allcombinations;
+			private Map<Integer,Combinations> allcombinations;
+			private volatile boolean currentlyActive;
 			private List<Integer> allTransactions;
 			private volatile int ticketID;
+			private List<Integer> unconfirmedTickets;
+			private Integer[] winningCombination;
 			public MainServer() {
 				readCombinationsFromFile("allcombs.txt");
 				readTransactonsFromFile("alltrans.txt");
+				unconfirmedTickets= new LinkedList<Integer>();
+				
 			}
 			
+			
+			public void declareWinners() {
+				allcombinations.forEach(new BiConsumer<Integer, Combinations>() {
+
+					@Override
+					public void accept(Integer t, Combinations u) {
+						// TODO Auto-generated method stub
+						int amount=0;
+						for( Integer[] comb:u.getCombinations()) {
+							int num_matched = countMatched(comb);
+							amount+=Constants.PRICE_MATCHED[num_matched];
+						}
+					//TODO dodaj u slucaju greske koji nisu sve isplaceni!!!!!!!!!!!
+						new CashOutClassAccount(u.getSubeserverIp(), Constants.SERVER_PORT_SUBSERVER, amount, u.getAccountID(), MainServer.this).start();
+					}
+					
+				});
+				
+				
+			}
+			
+			private int countMatched(Integer[] comb) {
+				int sum=0;
+				for(int i : winningCombination) {
+					for(int j : comb)
+						if(j==i)sum++;
+				}
+				return sum;
+			}
+			
+			
+			public synchronized void addUnconfirmedTicket(int ticketID) {
+				
+				 unconfirmedTickets.add(ticketID);
+			}
+			public synchronized void removeUnconfirmedTicket(int ticketID) {
+				
+				 unconfirmedTickets.removeIf(new Predicate<Integer>() {
+
+					@Override
+					public boolean test(Integer t) {
+						return t==ticketID;
+					}
+				});
+			}
+				public boolean getCurrentlyActive() {
+					return currentlyActive;
+					
+				}
+				
+				public boolean setCurrentlyActive(boolean active) {
+					return currentlyActive=active;
+					
+				}
+				
 			
 			public synchronized boolean checkExistsTransactions(int transactionID) {
 				return allTransactions.contains(transactionID);
@@ -44,9 +110,21 @@ public class MainServer {
 			public synchronized int getNextTicketID() {
 				return ticketID++;
 			}
-			
+			public synchronized void addCombination(int ticketID, List<Integer[]> comb, int transactionID, String subserverIp) {
+				Combinations combination = new Combinations();
+				combination.setTicketID(ticketID);
+				combination.setCombinations(comb);
+				combination.setTransactionID(transactionID);
+				combination.setSubeserverIp(subserverIp);
+				allcombinations.put(ticketID, combination);
+				saveCombinationsToFile();
+				
+			}
 			public synchronized void addCombination(int ticketID, List<Integer[]> comb) {
-				allcombinations.put(ticketID, comb);
+				Combinations combination= new Combinations();
+				combination.setTicketID(ticketID);
+				combination.setCombinations(comb);
+				allcombinations.put(ticketID, combination);
 				saveCombinationsToFile();
 				
 			}
@@ -63,22 +141,11 @@ public class MainServer {
 				File file = new File(filename);
 				try {
 					PrintWriter out = new PrintWriter(file);
-					allcombinations.forEach(new BiConsumer<Integer, List<Integer[]>>() {
+					allcombinations.forEach(new BiConsumer<Integer, Combinations>() {
 
 						@Override
-						public void accept(Integer t, List<Integer[]> u) {
-							StringBuilder sb = new StringBuilder();
-							sb.append(t+"!");
-							for(Integer[] comb: u) {
-								for(Integer num:comb) {
-									sb.append(num+",");
-								}
-								sb.deleteCharAt(sb.length()-1);
-								sb.append("#");
-								
-							}
-							sb.deleteCharAt(sb.length()-1);
-							sb.append("\n");
+						public void accept(Integer t, Combinations u) {
+							out.append(u.toSting()+"\n");
 							
 							
 						}
@@ -131,34 +198,26 @@ public class MainServer {
 			}
 			
 			
+			
+			
+			
+			
+			
 			private void readCombinationsFromFile(String filepath) {
-				allcombinations= new HashMap<Integer, List<Integer[]>>();
+				allcombinations= new HashMap<Integer, Combinations>();
 				
-				LinkedList<Integer> combination = new LinkedList<Integer>();
 				
 				File file = new File(filepath);
 				Scanner scanner;
 				try {
 					scanner = new Scanner(file);
 					while(scanner.hasNextLine()) {
-						LinkedList<Integer[]> allcombs = new LinkedList<Integer[]>();
-					String line = scanner.nextLine();	
-					String[]parts  = line.split("!");
-					Integer id = Integer.parseInt(parts[0]);
-					parts = parts[1].split("#");
-					for(String comb : parts) {
-						String[] nums = comb.split(",");
-						for(String num:nums) {
-							Integer n = Integer.parseInt(num);
-							combination.add(n);
-							
-						}
-						allcombs.add((Integer[])combination.toArray());
-						combination.clear();
+						String line = scanner.nextLine();
+						Combinations comb = Combinations.parseCombination(line);
+						allcombinations.put(comb.getTicketID(), comb);
+					}
 						
-					}
-						allcombinations.put(id, allcombs);
-					}
+					
 					
 				} catch (FileNotFoundException e) {
 					// TODO Auto-generated catch block
@@ -168,6 +227,45 @@ public class MainServer {
 				
 			}
 			
-			 
 			
+			private class WorkerServer extends Thread {
+				public void run() {
+					try {
+						ServerSocket server  = new ServerSocket(Constants.SERVER_PORT_TRAFFIC);
+				
+							while(!interrupted()) {
+								Socket client = server.accept();
+								
+					
+					
+					
+					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			
+			}
+			}
+			public   List<Integer[]>  getCombinations(String combs) {
+					LinkedList<Integer[]> list = new LinkedList<Integer[]>();
+					LinkedList<Integer> allnums= new LinkedList<Integer>();
+					
+					String[] allcombs = combs.split("#");
+					for(String comb : allcombs) {
+						String[] nums = comb.split(",");
+						for(String num:nums) {
+							allnums.add(Integer.parseInt(num));
+						}
+						list.add((Integer[])allnums.toArray());
+						allnums.clear();
+					}
+					
+					return list;
+					
+					
+				}
+			
+			 
 }
+
