@@ -125,5 +125,22 @@ public class MainServerCommunicator {
 		
 	}
 	
+	public void sendTicketIDtoCashSUbserver(int tickedId, int amount) {
+		try {
+			clientCommunicator.sendInt(tickedId);
+			clientCommunicator.sendInt(amount);
+			if(Constants.STATUS_OK==clientCommunicator.getInt()) {
+				//todo kako da znas koji je za isplatu
+				server.removeCombination(tickedId);
+			}
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+	}
+	
 
 }

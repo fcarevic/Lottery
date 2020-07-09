@@ -121,5 +121,21 @@ public class TrafficCommunicator {
 	}
 	*/
 	
+	public int cashSubserverCommunication(int ticketID) {
+		
+		try {
+			subserverCommunicator.sendInt(ticketID);
+			int amount = subserverCommunicator.getInt();
+			subserverCommunicator.sendInt(Constants.STATUS_OK);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return -1;
+		
+		
+	}
+	
 
 }
