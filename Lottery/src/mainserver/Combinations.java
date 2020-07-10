@@ -3,6 +3,8 @@ package mainserver;
 import java.util.LinkedList;
 import java.util.List;
 
+import constants.Constants;
+
 public class Combinations {
 	private String subeserverIp;
 	private int transactionID;
@@ -43,7 +45,7 @@ public class Combinations {
 	
 	public static Combinations parseCombination(String line) {
 		LinkedList<Integer[]> allcombs = new LinkedList<Integer[]>();
-		LinkedList<Integer> combination = new LinkedList<Integer>();
+		Integer[] combination =new  Integer[Constants.NUMBER_OF_NUMS_IN_COMB];
 		
 		String[]parts  = line.split("!");
 		Combinations combObj= new Combinations();
@@ -58,13 +60,15 @@ public class Combinations {
 		parts = parts[4].split("#");
 		for(String comb : parts) {
 			String[] nums = comb.split(",");
+			int i=0;
 			for(String num:nums) {
 				Integer n = Integer.parseInt(num);
-				combination.add(n);
+				combination[i++]=(n);
 				
 			}
-			allcombs.add((Integer[])combination.toArray());
+			allcombs.add(combination);
 			combObj.setCombinations(allcombs);
+			combination = new Integer[Constants.NUMBER_OF_NUMS_IN_COMB];
 			
 		
 		}

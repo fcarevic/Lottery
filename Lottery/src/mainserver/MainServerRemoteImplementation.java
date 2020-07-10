@@ -13,6 +13,8 @@ public class MainServerRemoteImplementation implements MainServerRemoteInterface
 			}
 	
 			public int sendCombination(String combination, int transactionID, String subserverIp) throws RemoteException{
+				if(!server.getCurrentlyActive()) return Constants.STATUS_CLOSED;
+				
 				if(server.checkExistsTransactions(transactionID)) {
 				List<Integer[]> comb = server.getCombinations(combination);
 				int ticketID= server.getNextTicketID();
@@ -22,6 +24,7 @@ public class MainServerRemoteImplementation implements MainServerRemoteInterface
 				} else return Constants.STATUS_ERROR;
 			}
 			public int sendCombination(String combination) throws RemoteException{
+				if(!server.getCurrentlyActive()) return Constants.STATUS_CLOSED;
 				List<Integer[]> comb = server.getCombinations(combination);
 				int ticketID= server.getNextTicketID();
 				server.addCombination(ticketID, comb);

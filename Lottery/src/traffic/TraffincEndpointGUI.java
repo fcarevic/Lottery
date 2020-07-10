@@ -15,6 +15,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import communication.TrafficCommunicator;
+import constants.Constants;
 import pdfcreator.PdfWriter;
 
 public class TraffincEndpointGUI extends JFrame {
@@ -25,7 +26,6 @@ private JButton addNewCombination;
  private JTextArea combinations;
  private JTextField[] numbers;
  private LinkedList<Integer[]> combinationList;
- private TrafficCommunicator communicator;
  
 	public TraffincEndpointGUI() {
 		setSize(500, 400);
@@ -105,7 +105,41 @@ private JButton addNewCombination;
 		combinations.setText(sb.toString());
 	}
 	
-	
+	private class DialogCashClosed extends JDialog{
+		private JButton refund;
+		private JButton payForNextTIme;
+		
+		public DialogCashClosed(TraffincEndpointGUI parent) {
+			super(parent,true);
+			setSize(300, 300);
+			addButtons();
+			setVisible(true);
+			
+		}
+		
+		private void addButtons() {
+			JPanel panel = new JPanel();
+			
+			refund = new JButton("Refund"); 
+			refund.addActionListener(l->{
+				
+				
+				
+				
+				
+			});
+			payForNextTIme = new JButton("Pay for next time");
+			panel.add(refund);
+			panel.add(payForNextTIme);
+			add(panel);
+			
+		}
+		
+		
+		
+		
+		
+	}
 	
 	private class PaymentDialog extends JDialog{
 		private JTextField id, pin ,cashAmount;
@@ -134,36 +168,37 @@ private JButton addNewCombination;
 			 try {
 				 Integer amount  = Integer.parseInt(cashAmount.getText());
 				 if(amount<COST_PER_COMBINATION*combinationList.size()) {
-					 JDialog error =new JDialog(TraffincEndpointGUI.this, true);
-						
-						error.add(new JLabel("      Insufficient amount"));
-						error.setSize(300,100);
-						error.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-						error.setVisible(true);
+					 printErrorDialog("Insufficient amount");
 	 
 					 return;
 				 }
-				if(! communicator.payViaCash(combinationList)) {
-					 JDialog error =new JDialog(TraffincEndpointGUI.this, true);
-						
-						error.add(new JLabel("      Error while  communicating with server"));
-						error.setSize(300,100);
-						error.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-						error.setVisible(true);
-	 
+				 try {
+					TrafficCommunicator communicator = new TrafficCommunicator();
+					 communicator.setMainServer(Constants.MAIN_SERVER_IP, Constants.SERVER_PORT_TRAFFIC);
+				int response= communicator.payViaCash(combinationList);
+				if(Constants.STATUS_ERROR==response ) {
+					 printErrorDialog("Error while communicatoing with server");
 					
+				} else if(Constants.STATUS_CLOSED==response) {
+					
+					
+					
+					
+					
+				} else {
+				 printErrorDialog("PDF printed");	
 				}
 		
-				 
+				 } catch(Exception e) {
+					 e.printStackTrace();
+					 System.out.println("ovde");
+					 printErrorDialog("Error while communicatoing with server");
+	 
+				 }
 				 
 				
 			} catch (Exception e) {
-				JDialog error =new JDialog(TraffincEndpointGUI.this, true);
-				
-				error.add(new JLabel("      Incorrect number format"));
-				error.setSize(300,100);
-				error.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-				error.setVisible(true);
+				printErrorDialog("Incorrect number format");
 
 				// TODO: handle exception
 			}
@@ -196,8 +231,23 @@ private JButton addNewCombination;
 		}
 		
 	}
-	
+
+	public void printErrorDialog(String errorS) {
+		JDialog error =new JDialog(TraffincEndpointGUI.this, true);
+		
+		error.add(new JLabel("      " + errorS));
+		error.setSize(300,100);
+		error.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+		error.setVisible(true);
+
+		
+		
+	}
 	public static void main(String[] args) {
+		if(System.getSecurityManager()==null) 
+		{
+			System.setSecurityManager(new SecurityManager());
+		}
 		new TraffincEndpointGUI();
 		
 	}

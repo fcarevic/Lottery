@@ -3,6 +3,7 @@ package communication;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.LinkedList;
@@ -14,18 +15,35 @@ import pdfcreator.PdfWriter;
 public class TrafficCommunicator {
 	private static final int STATUS_OK=0;
 	
-	private Communicator subserverCommunicator;
-	private MainServerRemoteInterface mainserverCommunicator;
+	private static Communicator subserverCommunicator;
+	private static MainServerRemoteInterface mainserverCommunicator;
+	private static Registry register;
 	private String hostSubserver;
 	
 	public TrafficCommunicator(String hostMainServer, int portMainServer,String hostSubserver, int portSubserver) throws UnknownHostException, IOException, NotBoundException {
+		setSubserver(hostSubserver, portSubserver);
+		setMainServer(hostMainServer, portMainServer);
+			// TODO Auto-generated constructor stub
+	}
+	
+	
+	public TrafficCommunicator() {}
+	public void setSubserver(String hostSubserver, int portSubserver ) throws UnknownHostException, IOException {
 		subserverCommunicator= new Communicator(hostSubserver, portSubserver);
 		this.hostSubserver=hostSubserver;
-		
-		Registry register = LocateRegistry.getRegistry(hostMainServer,portMainServer);
-		mainserverCommunicator= (MainServerRemoteInterface) register.lookup(Constants.MAIN_SERVER_RMI_NAME);
-		// TODO Auto-generated constructor stub
+	
 	}
+	
+	public void setMainServer(String hostMainServer, int portMainServer) throws RemoteException, NotBoundException {
+		
+		 register= LocateRegistry.getRegistry(hostMainServer,portMainServer);
+		mainserverCommunicator= (MainServerRemoteInterface) register.lookup(Constants.MAIN_SERVER_RMI_NAME);
+		
+		System.out.println("Dodao remte inter" + mainserverCommunicator);
+	
+		
+	}
+	
 	
 	/**
 	 * @param 
@@ -81,8 +99,9 @@ public class TrafficCommunicator {
 				
 			}
 			sb.append('#');
-			sb.deleteCharAt(sb.lastIndexOf("#"));
 		}
+		sb.deleteCharAt(sb.lastIndexOf("#"));
+		
 		return sb.toString();
 		
 		
@@ -104,22 +123,24 @@ public class TrafficCommunicator {
 		mainserverCommunicator.sendString(sb.toString());
 		return true;
 		
-	}
-	public boolean payViaCash(LinkedList<Integer[]> combinations) {
+	}*/
+	public int payViaCash(LinkedList<Integer[]> combinationList) {
 		  try {
-			sendCombinationToMainServer(combinations);
-			int ticketID = mainserverCommunicator.getInt();
-			if(ticketID!=-1) PdfWriter.createPDF("Ticket" + ticketID, combinations, ticketID);
-			mainserverCommunicator.sendInt(STATUS_OK); // sta ako ovde pukne??
-			return true;
-		} catch (IOException e) {
+			  String combs = generateStringFromCombination(combinationList);
+			  System.out.println(combs);
+				int ticketID=mainserverCommunicator.sendCombination(combs);
+				if(ticketID!=Constants.STATUS_ERROR && ticketID!=Constants.STATUS_CLOSED) {
+					PdfWriter.createPDF("Ticket"+ticketID+".pdf", combinationList, ticketID);
+					mainserverCommunicator.sendAck(ticketID);
+				}
+				} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		  
-		  return false;
+		  return Constants.STATUS_ERROR;
 	}
-	*/
+	
 	
 	public int cashSubserverCommunication(int ticketID) {
 		

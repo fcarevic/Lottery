@@ -25,8 +25,8 @@ public class MainServer {
 			private List<Integer> unconfirmedTickets;
 			private Integer[] winningCombination;
 			public MainServer() {
-				readCombinationsFromFile("allcombs.txt");
-				readTransactonsFromFile("alltrans.txt");
+				readCombinationsFromFile("allcombsMainServer.txt");
+				readTransactonsFromFile("alltransMainServer.txt");
 				unconfirmedTickets= new LinkedList<Integer>();
 				
 			}
@@ -61,6 +61,9 @@ public class MainServer {
 				return sum;
 			}
 			
+			public void setWinningCombiantion(Integer[] comb) {
+				this.winningCombination=comb;
+			}
 			
 			public synchronized void addUnconfirmedTicket(int ticketID) {
 				
@@ -137,7 +140,7 @@ public class MainServer {
 			
 			
 			public synchronized void saveCombinationsToFile() {
-				String filename= "alcombs.txt";
+				String filename= "alcombsMainServer.txt";
 				File file = new File(filename);
 				try {
 					PrintWriter out = new PrintWriter(file);
@@ -161,7 +164,7 @@ public class MainServer {
 			}
 			
 			public synchronized void saveTransactionsToFile() {
-				String filename="alltrans.txt";
+				String filename="alltransMainServer.txt";
 				File file = new File(filename);
 				try {
 					PrintWriter out = new PrintWriter(file);
@@ -228,7 +231,7 @@ public class MainServer {
 			}
 			
 			
-			private class WorkerServer extends Thread {
+		/*	private class WorkerServer extends Thread {
 				public void run() {
 					try {
 						ServerSocket server  = new ServerSocket(Constants.SERVER_PORT_TRAFFIC);
@@ -246,19 +249,22 @@ public class MainServer {
 				}
 			
 			}
-			}
+			}*/
 			public   List<Integer[]>  getCombinations(String combs) {
+				System.out.println(combs);
 					LinkedList<Integer[]> list = new LinkedList<Integer[]>();
-					LinkedList<Integer> allnums= new LinkedList<Integer>();
+					Integer[] allnums= new Integer[Constants.NUMBER_OF_NUMS_IN_COMB];
 					
 					String[] allcombs = combs.split("#");
 					for(String comb : allcombs) {
 						String[] nums = comb.split(",");
+						int i = 0;
 						for(String num:nums) {
-							allnums.add(Integer.parseInt(num));
+							allnums[i++]=(Integer.parseInt(num));
 						}
-						list.add((Integer[])allnums.toArray());
-						allnums.clear();
+						
+						list.add(allnums);
+						allnums= new Integer[Constants.NUMBER_OF_NUMS_IN_COMB];
 					}
 					
 					return list;
