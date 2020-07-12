@@ -35,8 +35,10 @@ public class MainServer {
 			private Integer[] winningCombination;
 			
 			private CashOutSolver winnersSolver;
-			public MainServer(int portForAccountSubserver) throws IOException {
+			private String cashSubserverIP;
+			public MainServer(int portForAccountSubserver, String cashSubserverIp) throws IOException {
 				this.winnersSolver=new CashOutSolver(this);
+				this.cashSubserverIP=cashSubserverIp;
 					serverForAccountSubserver= new ServerSocket(portForAccountSubserver);
 				readCombinationsFromFile(COMB_FILE);
 				readTransactonsFromFile(TRANS_FILE);
@@ -338,6 +340,11 @@ public class MainServer {
 				
 				
 				
+			}
+
+			public String getCashSubserverIp() {
+				// TODO Auto-generated method stub
+				return cashSubserverIP;
 			}
 			
 			 

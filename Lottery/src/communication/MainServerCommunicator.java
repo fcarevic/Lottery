@@ -102,7 +102,14 @@ public class MainServerCommunicator {
 	public boolean cashOutCah(int ticketID, int amount) throws IOException {
 		clientCommunicator.sendInt(ticketID);
 		clientCommunicator.sendInt(amount);
-		return true;
+		try {
+			clientCommunicator.getInt();
+			return true;
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return false;
 		
 		
 	}

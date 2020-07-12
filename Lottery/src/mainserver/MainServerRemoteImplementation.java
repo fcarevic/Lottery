@@ -1,8 +1,11 @@
 package mainserver;
 
+import java.io.IOException;
+import java.net.Socket;
 import java.rmi.RemoteException;
 import java.util.List;
 
+import communication.MainServerCommunicator;
 import constants.Constants;
 
 public class MainServerRemoteImplementation implements MainServerRemoteInterface{
@@ -35,6 +38,23 @@ public class MainServerRemoteImplementation implements MainServerRemoteInterface
 			public int sendAck(int ticketID)throws RemoteException {
 			  server.removeUnconfirmedTicket(ticketID);
 			  return Constants.STATUS_OK;
+			}
+
+			@Override
+			public String sendRequestForCashRetrieval(int ticketID, int amount) throws RemoteException {
+				Socket cashSUbServer;
+				try {
+					cashSUbServer = new Socket(server.getCashSubserverIp(), Constants.CASH_SUBSERVER_SERVER_PORT);
+					MainServerCommunicator comm = new MainServerCommunicator(cashSUbServer, server);
+					if(comm.cashOutCah(ticketID, amount)) {
+						return server.getCashSubserverIp();
+					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			  return null;
+				
 			}
 			
 			

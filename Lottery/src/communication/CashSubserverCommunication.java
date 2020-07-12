@@ -5,12 +5,13 @@ import java.net.Socket;
 
 import constants.Constants;
 import subservercash.SubserverCash;
+import subservercash.SubserverCashMonitor;
 
 public class CashSubserverCommunication {
 	private Communicator clientCommunicator;
-	private SubserverCash server;
+	private SubserverCashMonitor server;
 	
-	public CashSubserverCommunication(Socket client, SubserverCash s) throws IOException {
+	public CashSubserverCommunication(Socket client, SubserverCashMonitor s) throws IOException {
 		clientCommunicator= new Communicator(client);
 		server=s;
 		// TODO Auto-generated constructor stub
@@ -18,7 +19,7 @@ public class CashSubserverCommunication {
 	
 	public void communicateWithTraffic() {
 		boolean flag=false;
-		int ticketID=-1, amount= Constants.STATUS_ERROR;
+		int ticketID=Constants.STATUS_ERROR, amount= Constants.STATUS_ERROR;
 		try {
 			 ticketID = clientCommunicator.getInt();
 			 amount = server.getAmount(ticketID);
@@ -34,14 +35,15 @@ public class CashSubserverCommunication {
 	}
 	
 	public void communicateWithMainServer() {
-		int ticketID=-1, amount=-1;
+		int ticketID=Constants.STATUS_ERROR, amount=Constants.STATUS_ERROR;
 		try {
 			 ticketID = clientCommunicator.getInt();
 			 amount = clientCommunicator.getInt();
 			server.addWinningTicket(ticketID, amount);
 			clientCommunicator.sendInt(Constants.STATUS_OK);
+            clientCommunicator.close();
 		} catch (IOException | ClassNotFoundException e) {
-			server.addWinningTicket(ticketID, amount);
+			server.removeWinningTicket(ticketID, amount);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

@@ -146,7 +146,12 @@ public class TrafficCommunicator {
 		  
 		  return Constants.STATUS_ERROR;
 	}
-	
+	public String sendCashRefundRequest() {
+		 mainserverCommunicator.sendRequestForCashRetrieval(ticketID, amount);
+		
+		
+		
+	}
 	
 	public int cashSubserverCommunication(int ticketID) {
 		

@@ -84,7 +84,7 @@ public class MainServerGUI extends JFrame {
 		
 		MainServer server;
 		try {
-			server = new MainServer(Constants.SERVER_PORT_SUBSERVER);
+			server = new MainServer(Constants.SERVER_PORT_SUBSERVER, Constants.CASH_SUBSERVER_IP);
 	if(System.getSecurityManager()==null) {
 			System.setSecurityManager(new SecurityManager());
 		}
