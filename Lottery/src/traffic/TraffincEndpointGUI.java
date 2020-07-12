@@ -2,6 +2,8 @@ package traffic;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
+import java.io.IOException;
+import java.rmi.NotBoundException;
 import java.util.LinkedList;
 
 import javax.swing.JButton;
@@ -19,8 +21,7 @@ import constants.Constants;
 import pdfcreator.PdfWriter;
 
 public class TraffincEndpointGUI extends JFrame {
-  private static final int NUMBER_OF_NUMS=7; 
-  private static final int COST_PER_COMBINATION=10;
+  
 private JButton addNewCombination;
  private JButton next;
  private JTextArea combinations;
@@ -43,7 +44,7 @@ private JButton addNewCombination;
 	}
 	
 	private void addNumbers() {
-		numbers= new JTextField[NUMBER_OF_NUMS];
+		numbers= new JTextField[Constants.NUMBER_OF_NUMS];
 		JPanel numPanel = new JPanel();
 		for(int i=0 ; i< 7; i++) {
 			numbers[i]=new JTextField(4);
@@ -57,9 +58,9 @@ private JButton addNewCombination;
 	private void addButtons() {
 		addNewCombination= new JButton("Add combination");
 		addNewCombination.addActionListener(event->{
-			Integer [] newComb = new Integer[NUMBER_OF_NUMS];
+			Integer [] newComb = new Integer[Constants.NUMBER_OF_NUMS];
 			try {
-			for(int i=0 ; i < NUMBER_OF_NUMS; i++) {
+			for(int i=0 ; i < Constants.NUMBER_OF_NUMS; i++) {
 				newComb[i] = Integer.parseInt(numbers[i].getText());
 				
 						}
@@ -167,7 +168,7 @@ private JButton addNewCombination;
 			pay1.addActionListener(l->{
 			 try {
 				 Integer amount  = Integer.parseInt(cashAmount.getText());
-				 if(amount<COST_PER_COMBINATION*combinationList.size()) {
+				 if(amount<Constants.COST_PER_COMBINATION*combinationList.size()) {
 					 printErrorDialog("Insufficient amount");
 	 
 					 return;
@@ -176,18 +177,10 @@ private JButton addNewCombination;
 					TrafficCommunicator communicator = new TrafficCommunicator();
 					 communicator.setMainServer(Constants.MAIN_SERVER_IP, Constants.SERVER_PORT_TRAFFIC);
 				int response= communicator.payViaCash(combinationList);
-				if(Constants.STATUS_ERROR==response ) {
-					 printErrorDialog("Error while communicatoing with server");
+				if(Constants.STATUS_CLOSED==response ) {
+					 printErrorDialog("Currenlty closed");
 					
-				} else if(Constants.STATUS_CLOSED==response) {
-					
-					
-					
-					
-					
-				} else {
-				 printErrorDialog("PDF printed");	
-				}
+				} else resolveStatus(response);
 		
 				 } catch(Exception e) {
 					 e.printStackTrace();
@@ -221,6 +214,29 @@ private JButton addNewCombination;
 			JTextField pin= new JPasswordField(10);
 			JPanel west = new JPanel();
 			JButton pay2 = new JButton("Pay via account");
+			int amount = combinationList.size()*Constants.COST_PER_COMBINATION;
+		
+			pay2.addActionListener(l->{
+				String accountId = id.getText();
+				String pinCode= pin.getText();
+				TrafficCommunicator comm  =new TrafficCommunicator();
+				try {
+					comm.setSubserver(Constants.SUBSERVER_ACCOUNT_IP, Constants.SUBSERVER_PORT_TRAFFIC);
+					comm.setMainServer(Constants.MAIN_SERVER_IP, Constants.SERVER_PORT_TRAFFIC);
+					int status =comm.payViaAccount(accountId, pinCode, amount, combinationList);
+					resolveStatus(status);
+					
+				} catch (IOException e) {
+					printErrorDialog("Error while communicating with servers");
+					e.printStackTrace();
+				} catch (NotBoundException e) {
+					printErrorDialog("Error while communicating with main server");
+					
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			});
 			
 			west.setLayout(new GridLayout(3,1));
 			west.add(id);
@@ -231,7 +247,24 @@ private JButton addNewCombination;
 		}
 		
 	}
-
+  private void resolveStatus(int status) {
+	  switch (status) {
+		case Constants.STATUS_CLOSED:
+			printErrorDialog("Currently closed");
+			
+			break;
+		case Constants.STATUS_ERROR:
+			printErrorDialog("Error while communicating with servers");
+			
+			
+			break;
+		case Constants.STATUS_OK:
+			printErrorDialog("Pdf printed");
+			
+			break;
+		
+		}
+  }
 	public void printErrorDialog(String errorS) {
 		JDialog error =new JDialog(TraffincEndpointGUI.this, true);
 		

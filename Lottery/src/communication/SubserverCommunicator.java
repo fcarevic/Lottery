@@ -2,6 +2,7 @@ package communication;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 import constants.Constants;
 import database.AccountInfo;
@@ -11,12 +12,22 @@ public class SubserverCommunicator {
 private Communicator clientCommunicator, mainServerCommunicator;
 
 public SubserverCommunicator(Socket client, String hostMainSever, int portMainServer) throws IOException {
-	this.clientCommunicator= new Communicator(client);
-	this.mainServerCommunicator=new Communicator(hostMainSever,portMainServer);
+	setClientCommunicator(client);
 	}
 public SubserverCommunicator(Socket client) throws IOException {
-	this.clientCommunicator= new Communicator(client);
+	setClientCommunicator(client);
 }
+public SubserverCommunicator(){}
+
+public void setClientCommunicator(Socket client) throws IOException {
+	this.clientCommunicator= new Communicator(client);
+	
+}
+public void setMainServerCommunicator(String hostMainSever, int portMainServer) throws UnknownHostException, IOException {
+	this.mainServerCommunicator=new Communicator(hostMainSever,portMainServer);
+	
+}
+
 /**
  * @return int - id of transaction or -1 if failure
  * @author CAR
@@ -24,7 +35,7 @@ public SubserverCommunicator(Socket client) throws IOException {
 
 	public void processClientPaymentRequest() {
 			String request;
-			int transactionID=-1;
+			int transactionID=Constants.STATUS_ERROR;
 			int amount=0;
 			String accountID="";
 			String pin="" ;
@@ -36,27 +47,36 @@ public SubserverCommunicator(Socket client) throws IOException {
 			 amount = Integer.parseInt(parts[2]); 
 			
 			
-			
+			 System.out.println(request +" je req");
 			AccountInfo account =Database.getInstance().getAccountInfo(accountID, pin);
-			if(account==null) { clientCommunicator.sendInt(-1); return;}
+			System.out.println(account);
+			if(account==null) { clientCommunicator.sendInt(Constants.STATUS_ERROR); return;}
 			transactionID = account.cashOut(amount);
-			if(-1==transactionID){ clientCommunicator.sendInt(-1); return;}
-			mainServerCommunicator.sendInt(transactionID); //send transaction id
-			if(Constants.STATUS_ERROR==mainServerCommunicator.getInt()) {
+			System.out.println("ovde 1");
+			
+			if(Constants.STATUS_ERROR==transactionID){ clientCommunicator.sendInt(Constants.STATUS_ERROR); return;}
+			mainServerCommunicator.sendInt(transactionID); 
+			System.out.println("ovde 2");
+			
+			//send transaction id
+			int status = mainServerCommunicator.getInt();
+			System.out.println("ovde proSAO");
+			if(Constants.STATUS_OK!=status) {
 				Database.getInstance().getAccountInfo(accountID, pin).cashIn(amount);
+				clientCommunicator.sendInt(status);
 			}
 			else {
-			
+				System.out.println("ovde");
 			clientCommunicator.sendInt(transactionID);
-			
+			System.out.println("ovde2");
 			clientCommunicator.getInt();  //await for ack
-			
+			System.out.println("ovde3");
 			clientCommunicator.sendInt(transactionID); //send ack2
 			mainServerCommunicator.sendInt(transactionID);
 			}
 			} catch (ClassNotFoundException | IOException e) {
 				// TODO Auto-generated catch block
-				if(transactionID!=-1 ) {
+				if(transactionID!=Constants.STATUS_ERROR ) {
 					Database.getInstance().getAccountInfo(accountID, pin).cashIn(amount);
 				}
 				e.printStackTrace();
@@ -79,7 +99,11 @@ public SubserverCommunicator(Socket client) throws IOException {
 		try {
 			String accountID =clientCommunicator.getString();
 			int amount = clientCommunicator.getInt();
-			
+			AccountInfo ai = Database.getInstance().getAccountInfo(accountID);
+			if(ai!=null) {
+				ai.cashIn(amount);
+				System.out.println("Uvecao " + accountID+ " za " + amount);
+			}
 		} catch (IOException | ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

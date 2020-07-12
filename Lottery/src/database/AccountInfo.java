@@ -65,6 +65,8 @@ public class AccountInfo {
 		 newID=allTransactions.getLast()+1;
 		
 		allTransactions.add(newID);
+		Database.getInstance().saveToFile();
+		Database.getInstance().saveAllTransactionsToFile();
 		return newID;
 	}
 	
@@ -76,6 +78,7 @@ public class AccountInfo {
 	synchronized public boolean cashIn(int amount) {
 		if(amount<0) return false;
 		this.amount+=amount;
+		Database.getInstance().saveToFile();
 		return true;
 		
 	}

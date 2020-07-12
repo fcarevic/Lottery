@@ -13,8 +13,7 @@ public class Database {
 	private static Database instance;
 	private Database() {
 		database = new HashMap<String, AccountInfo>();
-		String filePath= "database.txt";
-		readDatabaseFromFile(filePath);
+		readDatabaseFromFile();
 		
 	}
 	
@@ -34,7 +33,9 @@ public class Database {
 	 * 
 	 * 
 	 */
-	private void readDatabaseFromFile(String filePath) {
+	private void readDatabaseFromFile() {
+		String filePath= "databaseSubserver.txt";
+		
 		File file = new File(filePath);
 		try {
 			Scanner scanner= new Scanner(file);
@@ -61,15 +62,17 @@ public class Database {
 	 * @param fileName
 	 */
 	
-	private void saveToFile(String fileName) {
-		File file =new File(fileName);
+	public void saveToFile() {
+		String filePath= "databaseSubserver.txt";
+		
+		File file =new File(filePath);
 		try {
 			PrintWriter writer = new PrintWriter(file);
 			database.forEach(new BiConsumer<String, AccountInfo>() {
 
 				@Override
 				public void accept(String t, AccountInfo u) {
-					writer.write(u.toString());
+					writer.write(u.toString()+"\n");
 				}
 			} );
 			
@@ -83,7 +86,9 @@ public class Database {
 		
 	}
 	
-	private void saveAllTransactionsToFile(String filePath) {
+	public void saveAllTransactionsToFile( ) {
+		String filePath="subserverAccountTransactions.txt";
+		
 		File file =new File(filePath);
 		try {
 			PrintWriter writer = new PrintWriter(file);
@@ -114,8 +119,9 @@ public class Database {
 		
 	}
 	
-	private void readAllTransactionsFromFile(String filePath) {
-		
+	private void readAllTransactionsFromFile() {
+		String filePath="subserverAccountTransactions.txt";
+			
 		File file = new File(filePath);
 		
 		Scanner scanner;
@@ -151,6 +157,13 @@ public class Database {
 		if(account.getPIN().equals(pin)) return account;
 		return null;
 		
+		
+	}
+
+
+	synchronized public AccountInfo getAccountInfo(String accountID) {
+		return database.get(accountID);
+		// TODO Auto-generated method stub
 		
 	}
 

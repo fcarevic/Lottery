@@ -51,22 +51,27 @@ public class TrafficCommunicator {
 	 * @author CAR
 	 * @throws IOException 
 	 */
-	public boolean payViaAccount(String accountId,String pin, int amount, LinkedList<Integer[]> combinationList )  {
+	public int payViaAccount(String accountId,String pin, int amount, LinkedList<Integer[]> combinationList )  {
 					String message = accountId + "#" + pin + "#" + amount;
 					try {
 						subserverCommunicator.sendString(message);
-					
+						System.out.println("ovde 1");
+						
 					int transactionID= subserverCommunicator.getInt();
-					if(transactionID==-1)return false;
+					System.out.println("ovde 2");
+					
+					if(transactionID==Constants.STATUS_CLOSED || transactionID==Constants.STATUS_ERROR)return transactionID;
 					subserverCommunicator.sendInt(transactionID);
+					System.out.println("ovde 3");
 					subserverCommunicator.getInt();
+					System.out.println("ovde 4");
 					
-					
-					int ticketID=mainserverCommunicator.sendCombination(generateStringFromCombination(combinationList), transactionID, hostSubserver);
-					if(ticketID!=-1) {
+					int ticketID=mainserverCommunicator.sendCombination(generateStringFromCombination(combinationList), transactionID, hostSubserver,accountId);
+					if(ticketID!=Constants.STATUS_CLOSED && ticketID != Constants.STATUS_ERROR) {
 						PdfWriter.createPDF("Ticket"+ticketID+".pdf", combinationList, ticketID);
 						mainserverCommunicator.sendAck(ticketID);
 					}
+					return Constants.STATUS_OK;
 					
 					
 				/*	mainserverCommunicator.sendInt(transactionID);
@@ -79,7 +84,7 @@ public class TrafficCommunicator {
 				    mainserverCommunicator.sendInt(STATUS_OK);
 					return true;
 */
-					} catch (IOException e) {
+					} catch (IOException | ClassNotFoundException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
@@ -87,7 +92,7 @@ public class TrafficCommunicator {
 						subserverCommunicator.close();
 					}
 					
-					return false;
+					return Constants.STATUS_ERROR;
 	}
 
 	private String generateStringFromCombination(LinkedList<Integer[]> combinations ) {
@@ -132,7 +137,8 @@ public class TrafficCommunicator {
 				if(ticketID!=Constants.STATUS_ERROR && ticketID!=Constants.STATUS_CLOSED) {
 					PdfWriter.createPDF("Ticket"+ticketID+".pdf", combinationList, ticketID);
 					mainserverCommunicator.sendAck(ticketID);
-				}
+					return Constants.STATUS_OK;
+				} else return ticketID;
 				} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -148,7 +154,7 @@ public class TrafficCommunicator {
 			subserverCommunicator.sendInt(ticketID);
 			int amount = subserverCommunicator.getInt();
 			subserverCommunicator.sendInt(Constants.STATUS_OK);
-		} catch (IOException e) {
+		} catch (IOException | ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

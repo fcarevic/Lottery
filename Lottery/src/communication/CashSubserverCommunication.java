@@ -25,7 +25,7 @@ public class CashSubserverCommunication {
 			flag =server.removeWinningTicket(ticketID, amount); 
 			clientCommunicator.sendInt(amount);
 			clientCommunicator.getInt();
-		} catch (IOException e) {
+		} catch (IOException | ClassNotFoundException e) {
 			if(flag)server.addWinningTicket(ticketID, amount);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -40,7 +40,7 @@ public class CashSubserverCommunication {
 			 amount = clientCommunicator.getInt();
 			server.addWinningTicket(ticketID, amount);
 			clientCommunicator.sendInt(Constants.STATUS_OK);
-		} catch (IOException e) {
+		} catch (IOException | ClassNotFoundException e) {
 			server.addWinningTicket(ticketID, amount);
 			// TODO Auto-generated catch block
 			e.printStackTrace();

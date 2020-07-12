@@ -38,14 +38,14 @@ public class Communicator {
 	   return  (String)in.readObject();
    }
    public void sendInt(Integer num) throws IOException {
-	   	out.writeInt(num);
+	   	out.writeObject(num);
 	   	out.flush();
 	   
    }
    
-   public int getInt() throws IOException {
+   public int getInt() throws IOException, ClassNotFoundException {
 	   
-	   return in.readInt();
+	   return (Integer)in.readObject();
 	   
    }
    

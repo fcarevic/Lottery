@@ -23,11 +23,13 @@ public class MainServerCommunicator {
 			transactionID= clientCommunicator.getInt();
 			if(server.getCurrentlyActive()) {
 			server.addTransaction(transactionID);
+			System.out.println("OVDE");
 			clientCommunicator.sendInt(Constants.STATUS_OK);
+			System.out.println("OVDE 2");
 			clientCommunicator.getInt();
-			} else clientCommunicator.sendInt(Constants.STATUS_ERROR);
+			} else clientCommunicator.sendInt(Constants.STATUS_CLOSED);
 			return true;
-		} catch (IOException e) {
+		} catch (IOException | ClassNotFoundException e) {
 			server.removeTransaction(transactionID);
 			e.printStackTrace();
 		}
@@ -134,7 +136,7 @@ public class MainServerCommunicator {
 				server.removeCombination(tickedId);
 			}
 			
-		} catch (IOException e) {
+		} catch (IOException | ClassNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

@@ -1,6 +1,7 @@
 package mainserver;
 
 import java.awt.BorderLayout;
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -55,6 +56,9 @@ public class MainServerGUI extends JFrame {
 				
 			}
 			server.setWinningCombiantion(nums);
+			close.setText("Open current");
+			server.setCurrentlyActive(false);
+			server.declareWinners();
 			}catch(NumberFormatException e) {}
 			
 		});
@@ -78,8 +82,10 @@ public class MainServerGUI extends JFrame {
 	}
 	public static void main(String args[]) {
 		
-		MainServer server = new MainServer();
-		if(System.getSecurityManager()==null) {
+		MainServer server;
+		try {
+			server = new MainServer(Constants.SERVER_PORT_SUBSERVER);
+	if(System.getSecurityManager()==null) {
 			System.setSecurityManager(new SecurityManager());
 		}
 		
@@ -95,6 +101,11 @@ public class MainServerGUI extends JFrame {
 		
 		MainServerGUI gui = new MainServerGUI();
 		gui.setMainServer(server);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
 		
 	}
 	

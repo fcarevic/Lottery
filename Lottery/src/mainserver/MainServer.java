@@ -11,27 +11,49 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
+import communication.MainServerCommunicator;
 import constants.Constants;
 
 
 public class MainServer {
+			
+		private static final String COMB_FILE="allcombsMainServer.txt";
+		private static final String TRANS_FILE="alltransMainServer.txt";
+		private static final String UNCASH_WINN_FILE="allUncashWinnersMainServer.txt";
+	
+			private ServerSocket serverForAccountSubserver;
 			private Map<Integer,Combinations> allcombinations;
 			private volatile boolean currentlyActive;
 			private List<Integer> allTransactions;
 			private volatile int ticketID;
 			private List<Integer> unconfirmedTickets;
+			private ConcurrentLinkedQueue<CashOutClassAccount> uncashedWinningCombinations;
 			private Integer[] winningCombination;
-			public MainServer() {
-				readCombinationsFromFile("allcombsMainServer.txt");
-				readTransactonsFromFile("alltransMainServer.txt");
+			
+			private CashOutSolver winnersSolver;
+			public MainServer(int portForAccountSubserver) throws IOException {
+				this.winnersSolver=new CashOutSolver(this);
+					serverForAccountSubserver= new ServerSocket(portForAccountSubserver);
+				readCombinationsFromFile(COMB_FILE);
+				readTransactonsFromFile(TRANS_FILE);
+				if(!allcombinations.isEmpty()) {
+					ticketID= allcombinations.entrySet().size()+1;
+				}
 				unconfirmedTickets= new LinkedList<Integer>();
+				new ServerForMainAccountSubserver().start();
 				
 			}
 			
 			
+			
+			
+			public void removeUncashedWinner(CashOutClassAccount comb) {
+				uncashedWinningCombinations.remove(comb);
+			}
 			public void declareWinners() {
 				allcombinations.forEach(new BiConsumer<Integer, Combinations>() {
 
@@ -44,7 +66,9 @@ public class MainServer {
 							amount+=Constants.PRICE_MATCHED[num_matched];
 						}
 					//TODO dodaj u slucaju greske koji nisu sve isplaceni!!!!!!!!!!!
-						new CashOutClassAccount(u.getSubeserverIp(), Constants.SERVER_PORT_SUBSERVER, amount, u.getAccountID(), MainServer.this).start();
+						CashOutClassAccount ca = new CashOutClassAccount(u.getSubeserverIp(), Constants.SUBSERVER_PORT_MAIN_SERVER, amount,u.getTicketID() , winnersSolver);
+						if(u.getAccountID()!=null)ca.setAccountID(u.getAccountID());
+						 winnersSolver.addWinner(ca);
 					}
 					
 				});
@@ -113,12 +137,13 @@ public class MainServer {
 			public synchronized int getNextTicketID() {
 				return ticketID++;
 			}
-			public synchronized void addCombination(int ticketID, List<Integer[]> comb, int transactionID, String subserverIp) {
+			public synchronized void addCombination(int ticketID, List<Integer[]> comb, int transactionID, String subserverIp,String accountID) {
 				Combinations combination = new Combinations();
 				combination.setTicketID(ticketID);
 				combination.setCombinations(comb);
 				combination.setTransactionID(transactionID);
 				combination.setSubeserverIp(subserverIp);
+				combination.setAccountID(accountID);
 				allcombinations.put(ticketID, combination);
 				saveCombinationsToFile();
 				
@@ -127,6 +152,7 @@ public class MainServer {
 				Combinations combination= new Combinations();
 				combination.setTicketID(ticketID);
 				combination.setCombinations(comb);
+				combination.setSubeserverIp(Constants.CASH_SUBSERVER_IP);
 				allcombinations.put(ticketID, combination);
 				saveCombinationsToFile();
 				
@@ -140,7 +166,7 @@ public class MainServer {
 			
 			
 			public synchronized void saveCombinationsToFile() {
-				String filename= "alcombsMainServer.txt";
+				String filename= COMB_FILE;
 				File file = new File(filename);
 				try {
 					PrintWriter out = new PrintWriter(file);
@@ -148,12 +174,13 @@ public class MainServer {
 
 						@Override
 						public void accept(Integer t, Combinations u) {
-							out.append(u.toSting()+"\n");
-							
+							out.write(u.toSting()+"\n");
+						
 							
 						}
 						
 					});
+					out.close();
 				
 				} catch (FileNotFoundException e) {
 					// TODO Auto-generated catch block
@@ -164,14 +191,15 @@ public class MainServer {
 			}
 			
 			public synchronized void saveTransactionsToFile() {
-				String filename="alltransMainServer.txt";
+				String filename=TRANS_FILE;
 				File file = new File(filename);
 				try {
 					PrintWriter out = new PrintWriter(file);
 					for(Integer id :allTransactions) {
-						out.append(id + " ");
+						out.write(id + " ");
+						
 					}
-				
+				out.close();
 				} catch (FileNotFoundException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -271,6 +299,46 @@ public class MainServer {
 					
 					
 				}
+			
+			private class ServerForMainAccountSubserver extends Thread{
+				@Override
+				public void run() {
+					while(!interrupted()) { 
+						
+				 try {
+					Socket client = serverForAccountSubserver.accept();
+					new Thread()
+					{
+						@Override
+						public void run() {
+							MainServerCommunicator comm;
+							try {
+								comm = new MainServerCommunicator(client,MainServer.this);
+								comm.paymentViaAccountSubserver();
+								
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+							if(!client.isClosed())
+								try {
+									client.close();
+								} catch (IOException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+								}
+					}.start();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				 }
+				}
+				
+				
+				
+			}
 			
 			 
 }
